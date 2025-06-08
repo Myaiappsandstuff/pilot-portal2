@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h2 style="color: var(--text-primary); font-weight: bold;">
+        <i class="fas fa-history frosty-icon"></i>
+        Submission History
+    </h2>
+    <p style="color: var(--text-secondary); font-size: 16px;">{{ pilot_name }} - All Submission Records</p>
+</div>
+
+{% if flights %}
+<div class="mb-3">
+    <div class="row g-2">
+        <div class="col-6">
+            <div class="card" style="background: rgba(30, 64, 175, 0.05); border: 1px solid rgba(30, 64, 175, 0.1);">
+                <div class="card-body text-center py-3">
+                    <div class="stat-number" style="font-size: 1.8em; color: var(--frosty-blue);">{{ flights|length }}</div>
+                    <div class="small text-muted">Total Submissions</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="card" style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.1);">
+                <div class="card-body text-center py-3">
+                    {% set total_hours = 0 %}
+                    {% for flight in flights %}
+                        {% set total_hours = total_hours + flight[5] %}
+                    {% endfor %}
+                    <div class="stat-number" style="font-size: 1.8em; color: var(--success-green);">{{ "%.1f"|format(total_hours) }}</div>
+                    <div class="small text-muted">Total Flight Time</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% for flight in flights %}
+<div class="card mb-3">
+    <div class="card-body py-3">
+        <div class="row align-items-center">
+            <div class="col-8">
+                <div class="d-flex align-items-center mb-2">
+                    <span class="badge bg-{{ 'secondary' if flight[4] == '604' else 'success' }} me-2">{{ flight[4] }}</span>
+                    <strong>{{ flight[0] }}</strong>
+                    {% if flight[7] %}
+                        <span class="badge bg-warning ms-2" style="font-size: 10px;">SN</span>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-1">
+                    <i class="fas fa-plane frosty-icon" style="font-size: 12px;"></i>
+                    <strong>{{ flight[1] }}</strong> - Logsheet {{ flight[2] }}/Q{{ flight[3] }}
+                </div>
+                
+                <div class="row">
+                    <div class="col-6">
+                        <small class="text-muted">
+                            <i class="fas fa-clock"></i> AT: {{ "%.1f"|format(flight[5]) }}h
+                        </small>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">
+                            <i class="fas fa-stopwatch"></i> FT: {{ "%.1f"|format(flight[6]) }}h
+                        </small>
+                    </div>
+                </div>
+                
+                {% if flight[8] %}
+                <div class="mt-1">
+                    <small class="text-muted">
+                        <i class="fas fa-user-friends"></i> With: {{ flight[8] }}
+                    </small>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-4 text-end">
+                <div class="mb-1">
+                    <i class="fas fa-compass" style="color: var(--frosty-blue); font-size: 1.2em;"></i>
+                </div>
+                <small class="text-muted d-block">
+                    {{ flight[9].split()[0] if flight[9] else 'Submitted' }}
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% else %}
+<div class="text-center py-5">
+    <i class="fas fa-plane-departure" style="font-size: 4em; color: var(--frosty-blue); opacity: 0.3;"></i>
+    <h5 class="mt-3 text-muted">No Submissions Yet</h5>
+    <p class="text-muted">Your submission history will appear here once you start submitting logsheets.</p>
+    <a href="{{ url_for('submit_logsheet') }}" class="btn btn-primary mt-3">
+        <i class="fas fa-plus-circle me-2"></i>Submit Your First Flight
+    </a>
+</div>
+{% endif %}
+
+<div class="d-grid gap-2 mt-4">
+    <a href="{{ url_for('pilot_dashboard') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+    </a>
+</div>
+
+{% endblock %}

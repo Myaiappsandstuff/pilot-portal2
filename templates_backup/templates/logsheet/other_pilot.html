@@ -1,0 +1,41 @@
+<!-- templates/logsheet/other_pilot.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="step-indicator">
+    <div class="step-circle">1</div>
+    <div class="step-circle">2</div>
+    <div class="step-circle">3</div>
+    <div class="step-circle">4</div>
+    <div class="step-circle">5</div>
+    <div class="step-circle">6</div>
+    <div class="step-circle">7</div>
+    <div class="step-circle">8</div>
+    <div class="step-circle active">9</div>
+</div>
+
+<div class="card">
+    <div class="card-header text-center">
+        <h4><i class="fas fa-users me-2"></i>Other Pilot</h4>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            <div class="mb-3">
+                <label class="form-label">Who else was on this flight?</label>
+                <select class="form-control" name="other_pilot_id">
+                    <option value="">No other pilot / Solo</option>
+                    {% for pilot in other_pilots %}
+                    <option value="{{ pilot[0] }}">{{ pilot[1] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-lg-mobile">
+                <i class="fas fa-arrow-right me-2"></i>Review & Submit
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+<!-- =================================== -->

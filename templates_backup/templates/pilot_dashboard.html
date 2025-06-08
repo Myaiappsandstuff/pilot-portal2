@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h2 style="color: white; font-weight: bold;">
+        <i class="fas fa-tachometer-alt me-2"></i>
+        Welcome, {{ pilot_name }}!
+    </h2>
+</div>
+
+<!-- Quick Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-4">
+        <div class="card stat-card">
+            <div class="stat-number">{{ month_stats[0] }}</div>
+            <div class="stat-label">Flights</div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="card stat-card">
+            <div class="stat-number">{{ "%.1f"|format(month_stats[1]) }}</div>
+            <div class="stat-label">Hours</div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="card stat-card" style="background: linear-gradient(45deg, #ff6b6b, #ee5a52);">
+            <div class="stat-number">${{ "%.0f"|format(month_stats[2]) }}</div>
+            <div class="stat-label">Earned</div>
+        </div>
+    </div>
+</div>
+
+<!-- Overtime Warning -->
+{% if month_stats[1] >= 25 %}
+<div class="alert alert-warning">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    <strong>Approaching Overtime!</strong> 
+    You have {{ "%.1f"|format(month_stats[1]) }} hours this month. 
+    Overtime rate (120/hr) kicks in at 30 hours.
+</div>
+{% endif %}
+
+<!-- Main Action Button -->
+<div class="mb-4">
+    <a href="{{ url_for('submit_logsheet') }}" class="btn btn-success btn-lg-mobile">
+        <i class="fas fa-plus-circle me-2"></i>Submit New Logsheet
+    </a>
+</div>
+
+<!-- Recent Flights -->
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-history me-2"></i>Recent Flights
+    </div>
+    <div class="card-body" style="padding: 0;">
+        {% if recent_flights %}
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <tbody>
+                    {% for flight in recent_flights %}
+                    <tr>
+                        <td>
+                            <strong>{{ flight[0] }}</strong><br>
+                            <small class="text-muted">{{ flight[1] }} - {{ flight[2] }}</small>
+                        </td>
+                        <td class="text-end">
+                            <span class="badge bg-info">{{ flight[4] }}</span><br>
+                            <small>{{ "%.1f"|format(flight[5]) }}h</small>
+                        </td>
+                        <td class="text-end">
+                            <strong>${{ "%.0f"|format(flight[6]) }}</strong>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-plane text-muted" style="font-size: 3em; opacity: 0.3;"></i>
+            <p class="text-muted mt-3">No flights this month yet</p>
+            <a href="{{ url_for('submit_logsheet') }}" class="btn btn-primary">
+                Submit Your First Flight
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Month Progress -->
+<div class="card mt-3">
+    <div class="card-body text-center">
+        <h6><i class="fas fa-calendar me-2"></i>This Month's Progress</h6>
+        <div class="progress mb-2" style="height: 8px;">
+            <div class="progress-bar" 
+                 style="width: {{ (month_stats[1] / 30 * 100)|round }}%; background: linear-gradient(45deg, #56ab2f, #a8e6cf);">
+            </div>
+        </div>
+        <small class="text-muted">
+            {{ "%.1f"|format(month_stats[1]) }} / 30 hours to overtime
+        </small>
+    </div>
+</div>
+{% endblock %}

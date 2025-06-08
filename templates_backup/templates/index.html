@@ -1,0 +1,81 @@
+<!-- templates/index.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mb-4">Flight Logsheet System Dashboard</h1>
+        
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-envelope text-primary"></i> Email Processing
+                        </h5>
+                        <p class="card-text">Process new logsheet emails from pilots.</p>
+                        <a href="{{ url_for('process_emails_route') }}" class="btn btn-primary">
+                            <i class="fas fa-sync"></i> Process Emails Now
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-file-excel text-success"></i> Monthly Reports
+                        </h5>
+                        <p class="card-text">Generate and send monthly Excel reports.</p>
+                        <a href="{{ url_for('generate_reports') }}" class="btn btn-success">
+                            <i class="fas fa-chart-bar"></i> Generate Reports
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-users text-info"></i> Manage Pilots
+                        </h5>
+                        <p class="card-text">Add, edit, or remove pilot profiles and rates.</p>
+                        <a href="{{ url_for('pilots') }}" class="btn btn-info">
+                            <i class="fas fa-cog"></i> Manage Pilots
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-list text-warning"></i> Flight Entries
+                        </h5>
+                        <p class="card-text">View all processed flight entries and logsheets.</p>
+                        <a href="{{ url_for('flights') }}" class="btn btn-warning">
+                            <i class="fas fa-eye"></i> View Entries
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="alert alert-info mt-4">
+            <h5><i class="fas fa-info-circle"></i> System Information</h5>
+            <ul class="mb-0">
+                <li><strong>Automated Email Processing:</strong> Daily at midnight</li>
+                <li><strong>Monthly Reports:</strong> Generated automatically on the 1st of each month</li>
+                <li><strong>Rate Calculation:</strong> Automatic overtime rates after 30 hours per month</li>
+                <li><strong>Email Format:</strong> Subject: "cfbxl logsheet ##### Q##### date"</li>
+                <li><strong>Body Format:</strong> "airtime flighttime *" (asterisk for short notice)</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

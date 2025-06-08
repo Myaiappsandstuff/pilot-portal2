@@ -1,0 +1,63 @@
+<!-- templates/pilots.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Pilot Management</h1>
+    <a href="{{ url_for('add_pilot') }}" class="btn btn-success">
+        <i class="fas fa-plus"></i> Add New Pilot
+    </a>
+</div>
+
+{% if pilots %}
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Name</th>
+                <th>Sending Emails</th>
+                <th>Personal Email</th>
+                <th>Base Rate</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pilot in pilots %}
+            <tr>
+                <td><strong>{{ pilot[1] }}</strong></td>
+                <td>
+                    {% if pilot[4] %}
+                        {% for email in pilot[4].split(', ') %}
+                            <span class="badge bg-info me-1">{{ email }}</span><br>
+                        {% endfor %}
+                    {% else %}
+                        <span class="text-muted">No sending emails</span>
+                    {% endif %}
+                </td>
+                <td>{{ pilot[2] }}</td>
+                <td>${{ "%.2f"|format(pilot[3]) }}/hour</td>
+                <td>
+                    <a href="{{ url_for('edit_pilot', pilot_id=pilot[0]) }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                    <a href="{{ url_for('delete_pilot', pilot_id=pilot[0]) }}" 
+                       class="btn btn-sm btn-danger"
+                       onclick="return confirm('Are you sure you want to delete this pilot?')">
+                        <i class="fas fa-trash"></i> Delete
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <h5><i class="fas fa-info-circle"></i> No Pilots Added Yet</h5>
+    <p>Add your first pilot to get started with the logsheet system.</p>
+    <a href="{{ url_for('add_pilot') }}" class="btn btn-success">
+        <i class="fas fa-plus"></i> Add First Pilot
+    </a>
+</div>
+{% endif %}
+{% endblock %}

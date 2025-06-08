@@ -1,0 +1,44 @@
+<!-- templates/logsheet/airtime.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="step-indicator">
+    <div class="step-circle">1</div>
+    <div class="step-circle">2</div>
+    <div class="step-circle">3</div>
+    <div class="step-circle">4</div>
+    <div class="step-circle">5</div>
+    <div class="step-circle active">6</div>
+    <div class="step-circle">7</div>
+    <div class="step-circle">8</div>
+    <div class="step-circle">9</div>
+</div>
+
+<div class="card">
+    <div class="card-header text-center">
+        <h4><i class="fas fa-clock me-2"></i>Airtime</h4>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            <div class="mb-3">
+                <label class="form-label">Airtime (hours)</label>
+                <input type="number" class="form-control" name="airtime" 
+                       step="0.1" min="0" max="24" required
+                       placeholder="e.g. 1.2"
+                       style="font-size: 32px; text-align: center; font-weight: bold;">
+                <div class="form-text">Engine running time</div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-lg-mobile">
+                <i class="fas fa-arrow-right me-2"></i>Next
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+document.querySelector('input[name="airtime"]').focus();
+</script>
+{% endblock %}
+
+<!-- =================================== -->

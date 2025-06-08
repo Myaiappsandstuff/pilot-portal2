@@ -1,0 +1,348 @@
+<!-- templates/admin/dashboard.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h2 style="color: var(--text-primary); font-weight: bold;">
+        <i class="fas fa-cogs frosty-icon"></i>Frosty's Admin Dashboard
+    </h2>
+    <p style="color: var(--text-secondary);">Operations Management Center</p>
+</div>
+
+<!-- Email System Management -->
+<div class="card mb-4" style="border-left: 4px solid var(--frosty-blue);">
+    <div class="card-body py-3">
+        <div class="row align-items-center">
+            <div class="col-12">
+                <h6 class="mb-1">
+                    <i class="fas fa-envelope frosty-icon"></i>Email System
+                </h6>
+                <p class="mb-0">
+                    <a href="{{ url_for('admin_ops_emails') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-cog me-1"></i>Configure Email Settings
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-3">
+        <div class="card stat-card">
+            <div class="stat-number">{{ total_pilots }}</div>
+            <div class="stat-label">
+                <i class="fas fa-users"></i> Pilots
+            </div>
+        </div>
+    </div>
+    <div class="col-3">
+        <div class="card stat-card">
+            <div class="stat-number">{{ total_flights }}</div>
+            <div class="stat-label">
+                <i class="fas fa-plane-departure"></i> Flights
+            </div>
+        </div>
+    </div>
+    <div class="col-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #0891B2 0%, #0E7490 100%);">
+            <div class="stat-number">{{ total_aircraft }}</div>
+            <div class="stat-label">
+                <i class="fas fa-plane"></i> Aircraft
+            </div>
+        </div>
+    </div>
+    <div class="col-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
+            <div class="stat-number">{{ active_ops_emails|default(0) }}</div>
+            <div class="stat-label">
+                <i class="fas fa-envelope"></i> Ops Emails
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Core Management Actions -->
+<div class="row g-3 mb-4">
+    <div class="col-6">
+        <a href="{{ url_for('admin_pilots') }}" class="btn btn-primary btn-lg-mobile">
+            <i class="fas fa-users me-2"></i>Manage Pilots
+        </a>
+    </div>
+    <div class="col-6">
+        <a href="{{ url_for('admin_aircraft') }}" class="btn btn-info btn-lg-mobile">
+            <i class="fas fa-plane me-2"></i>Manage Aircraft
+        </a>
+    </div>
+</div>
+
+<!-- Operations & Email Management -->
+<div class="row g-3 mb-4">
+    <div class="col-6">
+        <a href="{{ url_for('admin_ops_emails') }}" class="btn btn-warning btn-lg-mobile">
+            <i class="fas fa-envelope me-2"></i>Ops Emails
+        </a>
+    </div>
+    <div class="col-6">
+        <a href="{{ url_for('admin_flights') }}" class="btn btn-secondary btn-lg-mobile">
+            <i class="fas fa-list me-2"></i>View Flights
+        </a>
+    </div>
+</div>
+
+<!-- Reports Generation -->
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <a href="{{ url_for('admin_generate_reports') }}" class="btn btn-success btn-lg-mobile">
+            <i class="fas fa-file-excel me-2"></i>Generate Monthly Reports
+        </a>
+    </div>
+</div>
+
+<!-- Recent Flights with Email Status -->
+<div class="card">
+    <div class="card-header">
+        <div class="row align-items-center">
+            <div class="col-8">
+                <i class="fas fa-history me-2"></i>Recent Flight Submissions
+            </div>
+            <div class="col-4 text-end">
+                <small class="text-muted">
+                    <i class="fas fa-circle text-success"></i> Emailed
+                    <i class="fas fa-circle text-warning ms-2"></i> Pending
+                </small>
+            </div>
+        </div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        {% if recent_flights %}
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <tbody>
+                    {% for flight in recent_flights %}
+                    <tr>
+                        <td>
+                            <strong>{{ flight[1] }}</strong><br>
+                            <small class="text-muted">{{ flight[0] }} - {{ flight[2] }}</small>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-{{ 'secondary' if flight[5] == '604' else 'success' }}">{{ flight[5] }}</span><br>
+                            <small>{{ "%.1f"|format(flight[6]) }}h</small>
+                        </td>
+                        <td class="text-center">
+                            <!-- Email status indicator -->
+                            {% if flight|length > 8 and flight[8] %}
+                                <i class="fas fa-check-circle text-success" title="Email sent successfully"></i>
+                            {% else %}
+                                <i class="fas fa-exclamation-triangle text-warning" title="Email pending - needs attention"></i>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <strong>${{ "%.0f"|format(flight[7]) }}</strong>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Email delivery summary -->
+        <div class="mt-3 mx-3 mb-3">
+            {% set emails_sent = recent_flights|selectattr('8')|list|length %}
+            {% set emails_pending = recent_flights|rejectattr('8')|list|length %}
+            {% if emails_pending > 0 %}
+            <div class="alert alert-warning py-2 mb-0">
+                <small>
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>{{ emails_pending }} flights</strong> have pending email delivery.
+                    <a href="{{ url_for('admin_flights') }}" class="alert-link">View details →</a>
+                </small>
+            </div>
+            {% endif %}
+        </div>
+        
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-inbox text-muted" style="font-size: 3em; opacity: 0.3;"></i>
+            <p class="text-muted mt-3">No recent flights</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Pilot Monthly Summary Tool -->
+<div class="card mt-4">
+    <div class="card-header">
+        <i class="fas fa-user-check me-2"></i>Pilot Monthly Summary
+    </div>
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('admin_pilot_monthly') }}" class="row g-3 align-items-end">
+            <div class="col-6">
+                <label class="form-label small">Select Pilot</label>
+                <select name="pilot_id" class="form-control" required>
+                    <option value="">Choose pilot...</option>
+                    {% if all_pilots %}
+                        {% for pilot in all_pilots %}
+                        <option value="{{ pilot[0] }}" {% if request.args.get('pilot_id') == pilot[0]|string %}selected{% endif %}>
+                            {{ pilot[1] }}
+                        </option>
+                        {% endfor %}
+                    {% endif %}
+                </select>
+            </div>
+            <div class="col-4">
+                <label class="form-label small">Month</label>
+                <input type="month" name="month" class="form-control" 
+                       value="{{ request.args.get('month', current_month) }}" required>
+            </div>
+            <div class="col-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </form>
+        
+        <!-- Display pilot summary if requested -->
+        {% if pilot_summary %}
+        <hr class="my-3">
+        <div class="pilot-summary">
+            <div class="row mb-3">
+                <div class="col-12">
+                    <h6 class="mb-1">{{ pilot_summary.pilot_name }} - {{ pilot_summary.month_display }}</h6>
+                    <small class="text-muted">Complete monthly activity summary</small>
+                </div>
+            </div>
+            
+            <!-- Summary Stats -->
+            <div class="row g-2 mb-3">
+                <div class="col-3">
+                    <div class="text-center p-2" style="background: rgba(30, 64, 175, 0.1); border-radius: 8px;">
+                        <div class="fw-bold text-primary">{{ pilot_summary.total_flights }}</div>
+                        <small class="text-muted">Flights</small>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="text-center p-2" style="background: rgba(6, 182, 212, 0.1); border-radius: 8px;">
+                        <div class="fw-bold text-info">{{ "%.1f"|format(pilot_summary.total_hours) }}</div>
+                        <small class="text-muted">Hours</small>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="text-center p-2" style="background: rgba(16, 185, 129, 0.1); border-radius: 8px;">
+                        <div class="fw-bold text-success">${{ "%.0f"|format(pilot_summary.total_earnings) }}</div>
+                        <small class="text-muted">Earned</small>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="text-center p-2" style="background: rgba(245, 158, 11, 0.1); border-radius: 8px;">
+                        <div class="fw-bold text-warning">{{ pilot_summary.aircraft_count }}</div>
+                        <small class="text-muted">Aircraft</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Flight Details -->
+            <div class="small">
+                {% for flight in pilot_summary.flights %}
+                <div class="row py-2 border-bottom">
+                    <div class="col-3">
+                        <strong>{{ flight[2] }}</strong><br>
+                        <small class="text-muted">{{ flight[1] }}</small>
+                    </div>
+                    <div class="col-2 text-center">
+                        <span class="badge bg-{{ 'secondary' if flight[6] == '604' else 'success' }}">{{ flight[6] }}</span>
+                    </div>
+                    <div class="col-2 text-center">
+                        <strong>{{ "%.1f"|format(flight[7]) }}h</strong><br>
+                        <small class="text-muted">{{ flight[3] }}/Q{{ flight[4] }}</small>
+                    </div>
+                    <div class="col-2 text-center">
+                        {% if flight[10] %}
+                            <span class="badge bg-warning" style="font-size: 9px;">SN</span><br>
+                        {% endif %}
+                        {% if flight[15] %}
+                            <small class="text-muted">{{ flight[15] }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="col-2 text-end">
+                        <strong>${{ "%.0f"|format(flight[11]) }}</strong><br>
+                        <small class="text-muted">@${{ "%.0f"|format(flight[9]) }}</small>
+                    </div>
+                    <div class="col-1 text-center">
+                        {% if flight[13] %}
+                            <i class="fas fa-check-circle text-success" title="Email sent"></i>
+                        {% else %}
+                            <i class="fas fa-exclamation-triangle text-warning" title="Email pending"></i>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Overtime Warning -->
+            {% if pilot_summary.total_hours >= 30 %}
+            <div class="alert alert-info mt-3 py-2 mb-0">
+                <small>
+                    <i class="fas fa-clock me-2"></i>
+                    <strong>Overtime:</strong> {{ "%.1f"|format(pilot_summary.total_hours - 30) }} hours over 30-hour threshold
+                </small>
+            </div>
+            {% elif pilot_summary.total_hours >= 25 %}
+            <div class="alert alert-warning mt-3 py-2 mb-0">
+                <small>
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Approaching overtime:</strong> {{ "%.1f"|format(30 - pilot_summary.total_hours) }} hours remaining
+                </small>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Email System Health Check Script -->
+<script>
+// Auto-check email system health on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const emailCard = document.getElementById('emailStatusCard');
+    
+    // Check for alert messages to determine email system health
+    const alerts = document.querySelectorAll('.alert-danger, .alert-warning');
+    if (alerts.length > 0) {
+        emailCard.style.borderLeftColor = '#EF4444';
+        emailCard.style.animation = 'pulse 2s infinite';
+    } else {
+        emailCard.style.borderLeftColor = '#10B981';
+    }
+    
+    // Auto-refresh pilot summary form month to current month if empty
+    const monthInput = document.querySelector('input[type="month"]');
+    if (monthInput && !monthInput.value) {
+        const now = new Date();
+        const currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+        monthInput.value = currentMonth;
+    }
+});
+
+// Add CSS for pulse animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+    
+    .pilot-summary .border-bottom:last-child {
+        border-bottom: none !important;
+    }
+    
+    .pilot-summary .row:hover {
+        background-color: rgba(30, 64, 175, 0.05);
+        border-radius: 4px;
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

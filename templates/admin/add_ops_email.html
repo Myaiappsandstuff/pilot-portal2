@@ -1,0 +1,60 @@
+!-- templates/admin/add_ops_email.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 style="color: var(--text-primary); font-weight: bold;">
+        <i class="fas fa-envelope-plus frosty-icon"></i>Add Operations Email
+    </h3>
+    <a href="{{ url_for('admin_ops_emails') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            
+            <div class="mb-3">
+                <label class="form-label">Email Address *</label>
+                <input type="email" class="form-control" name="email" required
+                       placeholder="ops@company.com">
+                <div class="form-text">Where logsheets will be automatically sent</div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">Description</label>
+                <input type="text" class="form-control" name="description"
+                       placeholder="e.g. Primary Operations, Backup Ops, Manager">
+                <div class="form-text">Optional description to identify this email</div>
+            </div>
+            
+            <div class="mb-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="is_active" 
+                           id="is_active" checked>
+                    <label class="form-check-label" for="is_active">
+                        <strong>Active</strong> - Receive logsheets immediately
+                    </label>
+                </div>
+                <div class="form-text">Uncheck to add email but not send logsheets yet</div>
+            </div>
+            
+            <button type="submit" class="btn btn-success btn-lg-mobile">
+                <i class="fas fa-save me-2"></i>Add Operations Email
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="alert alert-info mt-4">
+    <h6><i class="fas fa-info-circle"></i> How it works</h6>
+    <ul class="mb-0">
+        <li>Each submitted logsheet is automatically emailed to all <strong>active</strong> operations emails</li>
+        <li>Emails include all logsheet details plus the uploaded photo/scan</li>
+        <li>Subject format: "FROSTY Logsheet ##### Q##### date"</li>
+        <li>You can temporarily disable emails by making them inactive</li>
+    </ul>
+</div>
+{% endblock %}

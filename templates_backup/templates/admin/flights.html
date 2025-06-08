@@ -1,0 +1,40 @@
+<!-- templates/admin/flights.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h3 style="color: white; font-weight: bold;">
+        <i class="fas fa-list me-2"></i>All Flight Entries
+    </h3>
+</div>
+
+{% if flights %}
+<div class="small">
+    {% for flight in flights %}
+    <div class="card mb-2">
+        <div class="card-body py-2">
+            <div class="row align-items-center">
+                <div class="col-6">
+                    <strong>{{ flight[2] }}</strong><br>
+                    <small class="text-muted">{{ flight[1] }} - {{ flight[3] }}</small>
+                </div>
+                <div class="col-3 text-center">
+                    <span class="badge bg-{{ 'info' if flight[6] == '604' else 'success' }}">{{ flight[6] }}</span><br>
+                    <small>{{ "%.1f"|format(flight[7]) }}h</small>
+                </div>
+                <div class="col-3 text-end">
+                    <strong>${{ "%.0f"|format(flight[11]) }}</strong><br>
+                    <small class="text-muted">{{ flight[13].split()[0] if flight[13] else '' }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info text-center">
+    <h5><i class="fas fa-info-circle"></i> No Flights Yet</h5>
+    <p>Flight entries will appear here once pilots start submitting logsheets.</p>
+</div>
+{% endif %}
+{% endblock %}

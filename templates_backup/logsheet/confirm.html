@@ -1,0 +1,115 @@
+<!-- templates/logsheet/confirm.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h3 style="color: white; font-weight: bold;">
+        <i class="fas fa-check-circle me-2"></i>
+        Review Your Logsheet
+    </h3>
+</div>
+
+<div class="card">
+    <div class="card-header text-center">
+        <h4><i class="fas fa-clipboard-check me-2"></i>Confirm Details</h4>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-6"><strong>Aircraft:</strong></div>
+            <div class="col-6">{{ data.aircraft }}</div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-6"><strong>Date:</strong></div>
+            <div class="col-6">{{ data.flight_date }}</div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-6"><strong>Logsheet #:</strong></div>
+            <div class="col-6">{{ data.logsheet_number }}</div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-6"><strong>Q Number:</strong></div>
+            <div class="col-6">{{ data.q_number }}</div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-6"><strong>Flight Type:</strong></div>
+            <div class="col-6">
+                <span class="badge bg-{{ 'info' if data.flight_type == '604' else 'success' }}">
+                    {{ data.flight_type }}
+                </span>
+            </div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-6"><strong>Airtime:</strong></div>
+            <div class="col-6">{{ data.airtime }} hours</div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-6"><strong>Flight Time:</strong></div>
+            <div class="col-6">{{ data.flight_time }} hours</div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-6"><strong>Short Notice:</strong></div>
+            <div class="col-6">
+                {% if data.short_notice %}
+                    <span class="badge bg-warning">Yes</span>
+                {% else %}
+                    <span class="badge bg-secondary">No</span>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if data.other_pilot %}
+        <div class="row mb-3">
+            <div class="col-6"><strong>Other Pilot:</strong></div>
+            <div class="col-6">{{ data.other_pilot }}</div>
+        </div>
+        {% endif %}
+        
+        <div class="row mb-3">
+            <div class="col-6"><strong>Photo Attached:</strong></div>
+            <div class="col-6">
+                <span class="badge bg-success">
+                    <i class="fas fa-check me-1"></i>Yes
+                </span>
+            </div>
+        </div>
+        
+        <hr>
+        
+        <div class="row mb-3">
+            <div class="col-6"><strong>Rate Applied:</strong></div>
+            <div class="col-6">${{ "%.2f"|format(data.rate) }}/hour</div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-6"><strong>Amount Earned:</strong></div>
+            <div class="col-6">
+                <strong style="color: #28a745; font-size: 1.2em;">
+                    ${{ "%.2f"|format(data.amount) }}
+                </strong>
+            </div>
+        </div>
+        
+        <div class="alert alert-info mb-4">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>This logsheet will be automatically emailed to ops</strong> with all the details above and your uploaded photo.
+        </div>
+        
+        <form method="POST" action="{{ url_for('logsheet_submit') }}">
+            <button type="submit" class="btn btn-success btn-lg-mobile">
+                <i class="fas fa-paper-plane me-2"></i>Submit Logsheet
+            </button>
+        </form>
+        
+        <a href="{{ url_for('pilot_dashboard') }}" class="btn btn-secondary btn-lg-mobile mt-2">
+            <i class="fas fa-times me-2"></i>Cancel
+        </a>
+    </div>
+</div>
+{% endblock %}

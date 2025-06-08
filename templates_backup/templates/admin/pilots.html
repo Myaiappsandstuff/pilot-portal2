@@ -1,0 +1,82 @@
+<!-- templates/admin/pilots.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 style="color: white; font-weight: bold;">
+        <i class="fas fa-users me-2"></i>Manage Pilots
+    </h3>
+    <a href="{{ url_for('admin_add_pilot') }}" class="btn btn-success">
+        <i class="fas fa-plus"></i>
+    </a>
+</div>
+
+{% if pilots %}
+{% for pilot in pilots %}
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-8">
+                <h5 class="mb-1">{{ pilot[1] }}</h5>
+                <p class="mb-1">
+                    <small class="text-muted">
+                        <i class="fas fa-key me-1"></i>PIN: {{ pilot[2] }}
+                    </small>
+                </p>
+                <p class="mb-1">
+                    <small class="text-muted">
+                        <i class="fas fa-envelope me-1"></i>{{ pilot[3] }}
+                    </small>
+                </p>
+                {% if pilot[4] %}
+                <p class="mb-1">
+                    <small class="text-muted">
+                        <i class="fas fa-briefcase me-1"></i>{{ pilot[4] }}
+                    </small>
+                </p>
+                {% endif %}
+                <p class="mb-1">
+                    <small class="text-muted">
+                        <i class="fas fa-dollar-sign me-1"></i>${{ "%.2f"|format(pilot[5]) }}/hour
+                    </small>
+                </p>
+                {% if pilot[6] %}
+                <p class="mb-0">
+                    <small class="text-muted">
+                        <i class="fas fa-plane me-1"></i>{{ pilot[6] }}
+                    </small>
+                </p>
+                {% endif %}
+            </div>
+            <div class="col-4 text-end">
+                <a href="{{ url_for('admin_edit_pilot', pilot_id=pilot[0]) }}" 
+                   class="btn btn-sm btn-outline-primary me-1">
+                    <i class="fas fa-edit"></i>
+                </a>
+                <button class="btn btn-sm btn-outline-danger" 
+                        onclick="deletePilot({{ pilot[0] }}, '{{ pilot[1] }}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="alert alert-info text-center">
+    <h5><i class="fas fa-info-circle"></i> No Pilots Yet</h5>
+    <p>Add your first pilot to get started.</p>
+    <a href="{{ url_for('admin_add_pilot') }}" class="btn btn-success">
+        <i class="fas fa-plus"></i> Add First Pilot
+    </a>
+</div>
+{% endif %}
+
+<script>
+function deletePilot(id, name) {
+    if (confirm(`Delete pilot ${name}? This will remove all their flight records!`)) {
+        window.location.href = `/admin/delete_pilot/${id}`;
+    }
+}
+</script>
+{% endblock %}

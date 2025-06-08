@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- For aircraft.html (step 1) -->
+<div class="step-indicator">
+    <div class="step-circle active">1</div>
+    <div class="step-circle">2</div>
+    <div class="step-circle">3</div>
+    <div class="step-circle">4</div>
+    <div class="step-circle">5</div>
+    <div class="step-circle">6</div>
+    <div class="step-circle">7</div>
+    <div class="step-circle">8</div>
+    <div class="step-circle">9</div>
+    <div class="step-circle">10</div>
+</div>
+
+<div class="card">
+    <div class="card-header text-center">
+        <h4><i class="fas fa-plane me-2"></i>Select Aircraft</h4>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            {% for aircraft in aircraft_list %}
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="radio" name="aircraft_id" 
+                       id="aircraft{{ aircraft[0] }}" value="{{ aircraft[0] }}" required>
+                <label class="form-check-label" for="aircraft{{ aircraft[0] }}">
+                    <strong>{{ aircraft[1] }}</strong>
+                </label>
+            </div>
+            {% endfor %}
+            
+            <button type="submit" class="btn btn-primary btn-lg-mobile" id="nextBtn" disabled>
+                <i class="fas fa-arrow-right me-2"></i>Next
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+// Enable next button when aircraft selected
+document.querySelectorAll('input[name="aircraft_id"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        document.getElementById('nextBtn').disabled = false;
+    });
+});
+</script>
+{% endblock %}

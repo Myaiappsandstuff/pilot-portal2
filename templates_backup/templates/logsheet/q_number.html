@@ -1,0 +1,42 @@
+<!-- templates/logsheet/q_number.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="step-indicator">
+    <div class="step-circle">1</div>
+    <div class="step-circle">2</div>
+    <div class="step-circle">3</div>
+    <div class="step-circle active">4</div>
+    <div class="step-circle">5</div>
+    <div class="step-circle">6</div>
+    <div class="step-circle">7</div>
+    <div class="step-circle">8</div>
+    <div class="step-circle">9</div>
+</div>
+
+<div class="card">
+    <div class="card-header text-center">
+        <h4><i class="fas fa-hashtag me-2"></i>Q Number</h4>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            <div class="mb-3">
+                <label class="form-label">Q Number</label>
+                <input type="text" class="form-control" name="q_number" 
+                       placeholder="e.g. 46065" required
+                       style="font-size: 24px; text-align: center;">
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-lg-mobile">
+                <i class="fas fa-arrow-right me-2"></i>Next
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+document.querySelector('input[name="q_number"]').focus();
+</script>
+{% endblock %}
+
+<!-- =================================== -->

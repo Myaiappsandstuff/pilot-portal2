@@ -1,0 +1,110 @@
+<!-- templates/admin/dashboard.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h2 style="color: white; font-weight: bold;">
+        <i class="fas fa-cogs me-2"></i>Admin Dashboard
+    </h2>
+</div>
+
+<!-- Quick Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-3">
+        <div class="card stat-card">
+            <div class="stat-number">{{ total_pilots }}</div>
+            <div class="stat-label">Pilots</div>
+        </div>
+    </div>
+    <div class="col-3">
+        <div class="card stat-card">
+            <div class="stat-number">{{ total_flights }}</div>
+            <div class="stat-label">Flights</div>
+        </div>
+    </div>
+    <div class="col-3">
+        <div class="card stat-card" style="background: linear-gradient(45deg, #ff6b6b, #ee5a52);">
+            <div class="stat-number">{{ total_aircraft }}</div>
+            <div class="stat-label">Aircraft</div>
+        </div>
+    </div>
+    <div class="col-3">
+        <div class="card stat-card" style="background: linear-gradient(45deg, #667eea, #764ba2);">
+            <div class="stat-number">{{ active_ops_emails|default(0) }}</div>
+            <div class="stat-label">Ops Emails</div>
+        </div>
+    </div>
+</div>
+
+<!-- Admin Actions -->
+<div class="row g-3 mb-4">
+    <div class="col-6">
+        <a href="{{ url_for('admin_pilots') }}" class="btn btn-primary btn-lg-mobile">
+            <i class="fas fa-users me-2"></i>Manage Pilots
+        </a>
+    </div>
+    <div class="col-6">
+        <a href="{{ url_for('admin_aircraft') }}" class="btn btn-info btn-lg-mobile">
+            <i class="fas fa-plane me-2"></i>Manage Aircraft
+        </a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6">
+        <a href="{{ url_for('admin_ops_emails') }}" class="btn btn-warning btn-lg-mobile">
+            <i class="fas fa-envelope me-2"></i>Ops Emails
+        </a>
+    </div>
+    <div class="col-6">
+        <a href="{{ url_for('admin_flights') }}" class="btn btn-secondary btn-lg-mobile">
+            <i class="fas fa-list me-2"></i>View Flights
+        </a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <a href="{{ url_for('admin_generate_reports') }}" class="btn btn-success btn-lg-mobile">
+            <i class="fas fa-file-excel me-2"></i>Generate Monthly Reports
+        </a>
+    </div>
+</div>
+
+<!-- Recent Flights -->
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-history me-2"></i>Recent Flight Submissions
+    </div>
+    <div class="card-body" style="padding: 0;">
+        {% if recent_flights %}
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <tbody>
+                    {% for flight in recent_flights %}
+                    <tr>
+                        <td>
+                            <strong>{{ flight[1] }}</strong><br>
+                            <small class="text-muted">{{ flight[0] }} - {{ flight[2] }}</small>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-{{ 'info' if flight[5] == '604' else 'success' }}">{{ flight[5] }}</span><br>
+                            <small>{{ "%.1f"|format(flight[6]) }}h</small>
+                        </td>
+                        <td class="text-end">
+                            <strong>${{ "%.0f"|format(flight[7]) }}</strong>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-inbox text-muted" style="font-size: 3em; opacity: 0.3;"></i>
+            <p class="text-muted mt-3">No recent flights</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

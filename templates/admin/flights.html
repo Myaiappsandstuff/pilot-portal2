@@ -1,0 +1,324 @@
+<!-- templates/admin/flights.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h3 style="color: var(--text-primary); font-weight: bold;">
+        <i class="fas fa-list frosty-icon"></i>All Flight Entries
+    </h3>
+    <p style="color: var(--text-secondary);">Flight submissions and email delivery status</p>
+</div>
+
+{% if flights %}
+<!-- Email Status Summary -->
+{% set emails_sent = flights|selectattr('14')|list|length %}
+{% set emails_pending = flights|rejectattr('14')|list|length %}
+
+<div class="card mb-3" style="border-left: 4px solid {{ '#10B981' if emails_pending == 0 else '#F59E0B' }};">
+    <div class="card-body py-3">
+        <div class="row align-items-center">
+            <div class="col-8">
+                <h6 class="mb-1">
+                    <i class="fas fa-envelope-open-text frosty-icon"></i>Email Delivery Status
+                </h6>
+                <small class="text-muted">
+                    {{ emails_sent }} sent, {{ emails_pending }} pending
+                    {% if emails_pending == 0 %}✅ All current{% endif %}
+                </small>
+            </div>
+            <div class="col-4 text-end">
+                {% if emails_pending > 0 %}
+                <span class="badge bg-warning">{{ emails_pending }} pending</span>
+                {% else %}
+                <span class="badge bg-success">All sent</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Flight Entries List -->
+<div class="small">
+    {% for flight in flights %}
+    <div class="card mb-2" style="{% if not flight[14] %}border-left: 3px solid #F59E0B;{% endif %}">
+        <div class="card-body py-2">
+            <div class="row align-items-center">
+                <div class="col-6">
+                    <div class="d-flex align-items-center mb-1">
+                        <strong>{{ flight[2] }}</strong>
+                        <span class="badge bg-{{ 'secondary' if flight[6] == '604' else 'success' }} ms-2" style="font-size: 9px;">
+                            {{ flight[6] }}
+                        </span>
+                        {% if flight[9] %}
+                            <span class="badge bg-warning ms-1" style="font-size: 8px;">SN</span>
+                        {% endif %}
+                    </div>
+                    <small class="text-muted d-block">
+                        <i class="fas fa-plane me-1"></i>{{ flight[1] }} - {{ flight[3] }}/Q{{ flight[4] }}
+                    </small>
+                    <small class="text-muted">
+                        <i class="fas fa-calendar me-1"></i>{{ flight[0] }} | 
+                        <i class="fas fa-clock me-1"></i>{{ "%.1f"|format(flight[7]) }}h |
+                        <i class="fas fa-dollar-sign me-1"></i>${{ "%.0f"|format(flight[11]) }}
+                    </small>
+                </div>
+                
+                <div class="col-3 text-center">
+                    <!-- Email Status with Action -->
+                    {% if flight[14] %}
+                        <div class="text-success mb-1">
+                            <i class="fas fa-check-circle"></i>
+                            <small class="d-block">Emailed</small>
+                        </div>
+                        <small class="text-muted">{{ flight[14].split()[0] if flight[14] else '' }}</small>
+                    {% else %}
+                        <div class="text-warning mb-1">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <small class="d-block">Pending</small>
+                        </div>
+                        <button class="btn btn-xs btn-outline-primary" 
+                                onclick="resendEmail({{ flight[0] }}, '{{ flight[3] }}')"
+                                style="font-size: 9px; padding: 1px 4px;">
+                            <i class="fas fa-paper-plane"></i> Send
+                        </button>
+                    {% endif %}
+                </div>
+                
+                <div class="col-3 text-end">
+                    <div class="mb-1">
+                        <strong style="color: #10B981;">${{ "%.0f"|format(flight[11]) }}</strong>
+                    </div>
+                    <small class="text-muted">{{ flight[13].split()[0] if flight[13] else 'Submitted' }}</small>
+                </div>
+            </div>
+            
+            <!-- Additional Details Row -->
+            {% if flight[12] %}
+            <div class="row mt-1">
+                <div class="col-12">
+                    <small class="text-muted">
+                        <i class="fas fa-user-friends me-1"></i>With: {{ flight[12] }}
+                    </small>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Quick Actions for Pending Emails -->
+{% if emails_pending > 0 %}
+<div class="card mt-4">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-8">
+                <h6 class="mb-1">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>Action Required
+                </h6>
+                <small class="text-muted">{{ emails_pending }} logsheets need email delivery</small>
+            </div>
+            <div class="col-4 text-end">
+                <button class="btn btn-sm btn-warning" onclick="resendAllPending()">
+                    <i class="fas fa-paper-plane me-1"></i>Send All
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Email Delivery Statistics -->
+<div class="card mt-4">
+    <div class="card-body">
+        <h6><i class="fas fa-chart-bar me-2"></i>Email Delivery Summary</h6>
+        <div class="row text-center">
+            <div class="col-3">
+                <div class="stat-number text-success">{{ emails_sent }}</div>
+                <div class="small text-muted">Delivered</div>
+            </div>
+            <div class="col-3">
+                <div class="stat-number text-warning">{{ emails_pending }}</div>
+                <div class="small text-muted">Pending</div>
+            </div>
+            <div class="col-3">
+                <div class="stat-number text-primary">{{ flights|length }}</div>
+                <div class="small text-muted">Total</div>
+            </div>
+            <div class="col-3">
+                <div class="stat-number text-info">{{ "%.0f"|format((emails_sent / flights|length * 100) if flights|length > 0 else 0) }}%</div>
+                <div class="small text-muted">Success Rate</div>
+            </div>
+        </div>
+        
+        {% if emails_pending > 0 %}
+        <div class="alert alert-warning mt-3 mb-0">
+            <small>
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Note:</strong> Logsheets with pending emails may indicate system issues. 
+                Use individual "Send" buttons or check Admin Dashboard → Email System → Status.
+            </small>
+        </div>
+        {% else %}
+        <div class="alert alert-success mt-3 mb-0">
+            <small>
+                <i class="fas fa-check-circle me-2"></i>
+                <strong>All logsheets delivered!</strong> Email system is operating normally.
+            </small>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% else %}
+<div class="alert alert-info text-center">
+    <h5><i class="fas fa-info-circle"></i> No Flights Yet</h5>
+    <p>Flight entries will appear here once pilots start submitting logsheets.</p>
+    <p><small class="text-muted">Email delivery status will be tracked automatically.</small></p>
+</div>
+{% endif %}
+
+<!-- Email Management Scripts -->
+<script>
+function resendEmail(flightId, logsheetNumber) {
+    if (confirm(`Resend email for logsheet ${logsheetNumber}?\n\nThis will send the logsheet details and photo to all active operations emails.`)) {
+        // Show loading state
+        const button = event.target.closest('button');
+        const originalContent = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        button.disabled = true;
+        
+        // Navigate to resend route
+        window.location.href = `/admin/resend_logsheet/${flightId}`;
+    }
+}
+
+function resendAllPending() {
+    const pendingCount = {{ emails_pending }};
+    if (pendingCount === 0) {
+        alert('No pending emails to send.');
+        return;
+    }
+    
+    if (confirm(`Send emails for all ${pendingCount} pending logsheets?\n\nThis will attempt to deliver all pending logsheets to operations emails.`)) {
+        // Get all pending flight IDs and send them one by one
+        const pendingButtons = document.querySelectorAll('button[onclick^="resendEmail"]');
+        let processed = 0;
+        
+        // Show progress
+        const progressAlert = document.createElement('div');
+        progressAlert.className = 'alert alert-info mt-3';
+        progressAlert.innerHTML = `
+            <i class="fas fa-spinner fa-spin me-2"></i>
+            Processing ${pendingCount} pending emails... <span id="progress">0/${pendingCount}</span>
+        `;
+        document.querySelector('.card-body').appendChild(progressAlert);
+        
+        // Process each pending email with delay
+        pendingButtons.forEach((button, index) => {
+            setTimeout(() => {
+                button.click();
+                processed++;
+                const progressSpan = document.getElementById('progress');
+                if (progressSpan) {
+                    progressSpan.textContent = `${processed}/${pendingCount}`;
+                }
+                
+                if (processed === pendingCount) {
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                }
+            }, index * 1000); // 1 second delay between sends
+        });
+    }
+}
+
+// Auto-refresh page every 2 minutes to show updated email status
+setTimeout(function() {
+    window.location.reload();
+}, 120000); // 2 minutes
+
+// Visual enhancements
+document.addEventListener('DOMContentLoaded', function() {
+    // Add tooltips for email status icons
+    const emailIcons = document.querySelectorAll('.fa-check-circle, .fa-exclamation-triangle');
+    emailIcons.forEach(icon => {
+        if (icon.classList.contains('fa-check-circle')) {
+            icon.parentElement.title = 'Email successfully delivered to operations';
+        } else if (icon.classList.contains('fa-exclamation-triangle')) {
+            icon.parentElement.title = 'Email delivery pending - click Send to retry';
+        }
+    });
+    
+    // Highlight cards with pending emails
+    const pendingCards = document.querySelectorAll('div[style*="border-left: 3px solid"]');
+    pendingCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateX(3px)';
+            this.style.transition = 'transform 0.2s ease';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateX(0)';
+        });
+    });
+    
+    // Success rate color coding
+    const successRateElement = document.querySelector('.stat-number.text-info');
+    if (successRateElement) {
+        const rate = parseInt(successRateElement.textContent);
+        if (rate === 100) {
+            successRateElement.className = 'stat-number text-success';
+        } else if (rate >= 90) {
+            successRateElement.className = 'stat-number text-info';
+        } else if (rate >= 75) {
+            successRateElement.className = 'stat-number text-warning';
+        } else {
+            successRateElement.className = 'stat-number text-danger';
+        }
+    }
+});
+</script>
+
+<!-- Custom Styles -->
+<style>
+.btn-xs {
+    padding: 1px 4px;
+    font-size: 9px;
+    line-height: 1.2;
+    border-radius: 4px;
+}
+
+.card[style*="border-left"] {
+    transition: all 0.3s ease;
+}
+
+.stat-number {
+    font-size: 1.5em;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.badge {
+    font-size: 0.7em;
+}
+
+.alert-warning, .alert-success, .alert-info {
+    font-size: 0.9em;
+}
+
+.card-body {
+    position: relative;
+}
+
+/* Pending email animation */
+@keyframes pendingPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.text-warning .fa-exclamation-triangle {
+    animation: pendingPulse 2s infinite;
+}
+</style>
+{% endblock %}

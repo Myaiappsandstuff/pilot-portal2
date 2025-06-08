@@ -1,0 +1,112 @@
+<!-- templates/logsheet/photo.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="step-indicator">
+    <div class="step-circle">1</div>
+    <div class="step-circle">2</div>
+    <div class="step-circle">3</div>
+    <div class="step-circle">4</div>
+    <div class="step-circle">5</div>
+    <div class="step-circle">6</div>
+    <div class="step-circle">7</div>
+    <div class="step-circle">8</div>
+    <div class="step-circle">9</div>
+    <div class="step-circle active">10</div>
+</div>
+
+<div class="card">
+    <div class="card-header text-center">
+        <h4><i class="fas fa-camera me-2"></i>Upload Logsheet Photo</h4>
+    </div>
+    <div class="card-body">
+        <form method="POST" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label class="form-label">Logsheet Photo/Scan *</label>
+                <input type="file" class="form-control" name="photo" 
+                       accept="image/*,.pdf" required
+                       style="font-size: 16px; padding: 15px;">
+                <div class="form-text">
+                    <i class="fas fa-exclamation-triangle me-1 text-warning"></i>
+                    <strong>Required:</strong> Upload a clear photo or scan of your logsheet (PNG, JPG, or PDF)
+                </div>
+            </div>
+            
+            <div class="alert alert-warning">
+                <i class="fas fa-camera me-2"></i>
+                <strong>Photo Required!</strong> A photo/scan of your logsheet must be included with every submission.
+                This will be automatically sent to ops with your logsheet details.
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-lg-mobile" id="submitBtn" disabled>
+                <i class="fas fa-arrow-right me-2"></i>Review & Submit
+            </button>
+        </form>
+    </div>
+</div>
+
+<style>
+.form-control[type="file"] {
+    border: 2px dashed #ffc107;
+    background: rgba(255, 193, 7, 0.1);
+    border-radius: 15px;
+    transition: all 0.3s ease;
+}
+
+.form-control[type="file"]:hover {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+}
+
+.form-control[type="file"]:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+</style>
+
+<script>
+// Enable submit button when file selected
+document.querySelector('input[type="file"]').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const submitBtn = document.getElementById('submitBtn');
+    
+    if (file) {
+        const fileName = file.name;
+        const fileSize = (file.size / 1024 / 1024).toFixed(2); // MB
+        
+        // Validate file size (max 16MB)
+        if (file.size > 16 * 1024 * 1024) {
+            alert('File too large! Please choose a file smaller than 16MB.');
+            e.target.value = '';
+            submitBtn.disabled = true;
+            return;
+        }
+        
+        // Show file info and enable submit
+        let infoHtml = `
+            <div class="alert alert-success mt-3">
+                <i class="fas fa-check-circle me-2"></i>
+                <strong>${fileName}</strong><br>
+                <small>Size: ${fileSize} MB - Ready to submit!</small>
+            </div>
+        `;
+        
+        // Remove existing info
+        const existingInfo = document.querySelector('.file-info');
+        if (existingInfo) {
+            existingInfo.remove();
+        }
+        
+        // Add new info
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'file-info';
+        infoDiv.innerHTML = infoHtml;
+        e.target.parentNode.appendChild(infoDiv);
+        
+        submitBtn.disabled = false;
+    } else {
+        submitBtn.disabled = true;
+    }
+});
+</script>
+{% endblock %}

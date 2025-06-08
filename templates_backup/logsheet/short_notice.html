@@ -1,0 +1,60 @@
+<!-- templates/logsheet/short_notice.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="step-indicator">
+    <div class="step-circle">1</div>
+    <div class="step-circle">2</div>
+    <div class="step-circle">3</div>
+    <div class="step-circle">4</div>
+    <div class="step-circle">5</div>
+    <div class="step-circle">6</div>
+    <div class="step-circle">7</div>
+    <div class="step-circle active">8</div>
+    <div class="step-circle">9</div>
+</div>
+
+<div class="card">
+    <div class="card-header text-center">
+        <h4><i class="fas fa-exclamation-triangle me-2"></i>Short Notice?</h4>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            <div class="alert alert-info mb-4">
+                <strong>Short Notice = $120/hour</strong><br>
+                <small>Instead of your base rate</small>
+            </div>
+            
+            <div class="form-check mb-4">
+                <input class="form-check-input" type="radio" name="short_notice" 
+                       id="short_no" value="no" required>
+                <label class="form-check-label" for="short_no">
+                    <strong>No</strong> - Normal flight
+                </label>
+            </div>
+            
+            <div class="form-check mb-4">
+                <input class="form-check-input" type="radio" name="short_notice" 
+                       id="short_yes" value="yes" required>
+                <label class="form-check-label" for="short_yes">
+                    <strong>Yes</strong> - Short notice flight
+                </label>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-lg-mobile" id="nextBtn" disabled>
+                <i class="fas fa-arrow-right me-2"></i>Next
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('input[name="short_notice"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        document.getElementById('nextBtn').disabled = false;
+    });
+});
+</script>
+{% endblock %}
+
+<!-- =================================== -->

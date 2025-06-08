@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h3 style="color: var(--text-primary); font-weight: bold;">
+        <i class="fas fa-check-circle frosty-icon"></i>
+        Review Your Logsheet
+    </h3>
+    <p style="color: var(--text-secondary);">Frosty's Operations Submission</p>
+</div>
+
+<div class="card">
+    <div class="card-header text-center">
+        <i class="fas fa-clipboard-check me-2"></i>Confirm Flight Details
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-6"><strong><i class="fas fa-plane frosty-icon"></i>Aircraft:</strong></div>
+            <div class="col-6">{{ data.aircraft }}</div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-6"><strong><i class="fas fa-calendar frosty-icon"></i>Date:</strong></div>
+            <div class="col-6">{{ data.flight_date }}</div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-6"><strong><i class="fas fa-file-alt frosty-icon"></i>Logsheet #:</strong></div>
+            <div class="col-6">{{ data.logsheet_number }}</div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-6"><strong><i class="fas fa-hashtag frosty-icon"></i>Q Number:</strong></div>
+            <div class="col-6">{{ data.q_number }}</div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-6"><strong><i class="fas fa-plane-departure frosty-icon"></i>Flight Type:</strong></div>
+            <div class="col-6">
+                <span class="badge bg-{{ 'secondary' if data.flight_type == '604' else 'success' }}">
+                    {{ data.flight_type }}
+                </span>
+            </div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-6"><strong><i class="fas fa-clock frosty-icon"></i>Airtime:</strong></div>
+            <div class="col-6">{{ data.airtime }} hours</div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-6"><strong><i class="fas fa-stopwatch frosty-icon"></i>Flight Time:</strong></div>
+            <div class="col-6">{{ data.flight_time }} hours</div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-6"><strong><i class="fas fa-exclamation-triangle frosty-icon"></i>Short Notice:</strong></div>
+            <div class="col-6">
+                {% if data.short_notice %}
+                    <span class="badge bg-warning">Yes</span>
+                {% else %}
+                    <span class="badge bg-secondary">No</span>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if data.other_pilot %}
+        <div class="row mb-3">
+            <div class="col-6"><strong><i class="fas fa-user-friends frosty-icon"></i>Other Pilot:</strong></div>
+            <div class="col-6">{{ data.other_pilot }}</div>
+        </div>
+        {% endif %}
+        
+        <div class="row mb-4">
+            <div class="col-6"><strong><i class="fas fa-camera frosty-icon"></i>Photo Attached:</strong></div>
+            <div class="col-6">
+                <span class="badge bg-success">
+                    <i class="fas fa-check me-1"></i>Yes
+                </span>
+            </div>
+        </div>
+        
+        <!-- Rate and Amount Display -->
+        <hr style="border-color: rgba(30, 64, 175, 0.2);">
+        
+        <div class="row mb-3">
+            <div class="col-6"><strong><i class="fas fa-calculator frosty-icon"></i>Rate Applied:</strong></div>
+            <div class="col-6">
+                <span style="font-size: 1.1em; color: var(--frosty-blue);">
+                    ${{ "%.2f"|format(data.rate) }}/hour
+                </span>
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-6"><strong><i class="fas fa-dollar-sign frosty-icon"></i>Amount Earned:</strong></div>
+            <div class="col-6">
+                <strong style="color: #10B981; font-size: 1.3em;">
+                    ${{ "%.2f"|format(data.amount) }}
+                </strong>
+            </div>
+        </div>
+        
+        <!-- Operations Submission Info -->
+        <div class="alert alert-info mb-4">
+            <h6><i class="fas fa-paper-plane me-2"></i>Frosty's Operations Submission</h6>
+            <p class="mb-0">
+                This logsheet will be automatically sent to Frosty's operations with:
+            </p>
+            <ul class="mb-0 mt-2" style="font-size: 14px;">
+                <li>Flight details and times</li>
+                <li>Pilot and aircraft information</li>
+                <li>Your uploaded logsheet photo</li>
+                <li><strong>No financial information</strong> (rates/amounts are private)</li>
+            </ul>
+        </div>
+        
+        <form method="POST" action="{{ url_for('logsheet_submit') }}">
+            <!-- CSRF Protection Token -->
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            
+            <button type="submit" class="btn btn-primary btn-lg-mobile">
+                <i class="fas fa-paper-plane me-2"></i>Submit to Frosty's Ops
+            </button>
+        </form>
+        
+        <a href="{{ url_for('pilot_dashboard') }}" class="btn btn-secondary btn-lg-mobile mt-2">
+            <i class="fas fa-times me-2"></i>Cancel
+        </a>
+    </div>
+</div>
+
+<!-- Frosty's Submission Footer -->
+<div class="text-center mt-3">
+    <small style="color: var(--text-muted);">
+        <i class="fas fa-compass frosty-icon"></i>
+        Frosty's Operations
+    </small>
+</div>
+{% endblock %}

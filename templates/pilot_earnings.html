@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h2 style="color: var(--text-primary); font-weight: bold;">
+        <i class="fas fa-chart-line frosty-icon"></i>
+        My Earnings
+    </h2>
+    <p style="color: var(--text-secondary); font-size: 16px;">{{ pilot_name }} - Financial Summary</p>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6">
+        <div class="card stat-card">
+            <div class="stat-number">{{ total_flights }}</div>
+            <div class="stat-label">
+                <i class="fas fa-plane-departure"></i> Flights
+            </div>
+        </div>
+    </div>
+    <div class="col-6">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #0891B2 0%, #0E7490 100%);">
+            <div class="stat-number">-</div>
+            <div class="stat-label">
+                <i class="fas fa-clock"></i> Hours
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
+            <div class="stat-number">${{ "%.2f"|format(total_earnings) }}</div>
+            <div class="stat-label">
+                <i class="fas fa-dollar-sign"></i> This Month
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="fas fa-info-circle me-2"></i>Rate Structure
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-6"><strong>Your Base Rate:</strong></div>
+            <div class="col-6">${{ "%.2f"|format(pilot_base_rate) }}/hour</div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-6"><strong>Short Notice Rate:</strong></div>
+            <div class="col-6">$120.00/hour</div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-6"><strong>Overtime Rate:</strong></div>
+            <div class="col-6">$120.00/hour</div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-6"><strong>Short Notice + OT:</strong></div>
+            <div class="col-6">$240.00/hour</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-money-bill-wave me-2"></i>Recent Paid Flights (704 Only)
+    </div>
+    <div class="card-body" style="padding: 0;">
+        {% if recent_paid_flights %}
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead>
+                    <tr style="background: rgba(30, 64, 175, 0.1);">
+                        <th>Date</th>
+                        <th>Aircraft</th>
+                        <th>Hours</th>
+                        <th>Rate</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for flight in recent_paid_flights %}
+                    <tr>
+                        <td>
+                            <strong>{{ flight[0] }}</strong><br>
+                            <small class="text-muted">{{ flight[2] }}/Q{{ flight[3] }}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-success">{{ flight[1] }}</span>
+                            {% if flight[7] %}
+                                <br><small class="text-warning">
+                                    <i class="fas fa-exclamation-triangle"></i> Short Notice
+                                </small>
+                            {% endif %}
+                        </td>
+                        <td>-</td>
+                        <td>
+                            <strong>${{ "%.2f"|format(flight[6]) }}</strong>
+                            {% if flight[6] > pilot_base_rate %}
+                                <br><small class="text-success">
+                                    {% if flight[7] %}Short Notice{% else %}Overtime{% endif %}
+                                </small>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <strong style="color: #10B981; font-size: 1.1em;">
+                                ${{ "%.2f"|format(flight[6]) }}
+                            </strong>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div style="background: rgba(30, 64, 175, 0.05); padding: 16px; border-top: 1px solid rgba(30, 64, 175, 0.1);">
+            <div class="row">
+                <div class="col-6">
+                    <strong>Total Paid Hours:</strong>
+                </div>
+                <div class="col-6 text-end">
+                    <strong>N/A</strong>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-6">
+                    <strong>Total Earnings:</strong>
+                </div>
+                <div class="col-6 text-end">
+                    <strong style="color: #10B981; font-size: 1.2em;">
+                        ${{ "%.2f"|format(total_earnings) }}
+                    </strong>
+                </div>
+            </div>
+        </div>
+        
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-coins" style="font-size: 3em; color: var(--frosty-blue); opacity: 0.3;"></i>
+            <p class="text-muted mt-3">No paid flights this month yet</p>
+            <small class="text-muted">704 flights will appear here</small>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="d-grid gap-2 mt-4">
+    <a href="{{ url_for('pilot_dashboard') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+    </a>
+</div>
+
+{% endblock %}

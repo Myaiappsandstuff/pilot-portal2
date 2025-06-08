@@ -1,0 +1,80 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h3 style="color: var(--text-primary); font-weight: bold;">
+        <i class="fas fa-check-circle frosty-icon"></i>
+        Review Your Logsheet
+    </h3>
+    <p style="color: var(--text-secondary);">FROSTY Operations Submission</p>
+</div>
+
+<div class="card">
+    <div class="card-header text-center">
+        <h4><i class="fas fa-file-alt me-2"></i>Logsheet Number</h4>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            
+            <div class="mb-3">
+                <label class="form-label">Logsheet Number</label>
+                <input type="text" 
+                       class="form-control" 
+                       name="logsheet_number" 
+                       placeholder="e.g. 10636" 
+                       required
+                       inputmode="numeric"
+                       pattern="[0-9]*"
+                       maxlength="10"
+                       style="font-size: 28px; text-align: center; font-weight: bold; letter-spacing: 1px;">
+                <div class="form-text">
+                    <i class="fas fa-hashtag frosty-icon"></i>
+                    Numbers only - mobile keypad will open automatically
+                </div>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('logsheet_step', step='date') }}" class="btn btn-secondary flex-fill">
+                    <i class="fas fa-arrow-left me-2"></i>Back
+                </a>
+                <button type="submit" class="btn btn-primary flex-fill">
+                    <i class="fas fa-arrow-right me-2"></i>Next
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+const logsheetInput = document.querySelector('input[name="logsheet_number"]');
+logsheetInput.focus();
+
+logsheetInput.addEventListener('input', function(e) {
+    this.value = this.value.replace(/[^0-9]/g, '');
+    
+    if (this.value.length > 0) {
+        this.style.borderColor = 'var(--frosty-blue)';
+        this.style.boxShadow = '0 0 0 3px rgba(30, 64, 175, 0.1)';
+    } else {
+        this.style.borderColor = '';
+        this.style.boxShadow = '';
+    }
+});
+
+logsheetInput.addEventListener('paste', function(e) {
+    e.preventDefault();
+    const paste = (e.clipboardData || window.clipboardData).getData('text');
+    const numericOnly = paste.replace(/[^0-9]/g, '');
+    this.value = numericOnly.substring(0, 10);
+    this.dispatchEvent(new Event('input'));
+});
+
+logsheetInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' && this.value.length > 0) {
+        this.form.submit();
+    }
+});
+</script>
+{% endblock %}
