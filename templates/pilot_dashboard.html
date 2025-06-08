@@ -23,31 +23,34 @@
 <div class="row g-2 mb-4" style="margin-top: 12px;">
     <div class="col-6">
         <div class="card stat-card" style="min-height: 70px; padding: 10px 0; border-radius: 6px;">
-            <div class="stat-number" style="font-size: 1.5rem; line-height: 1.2;">{{ month_stats[0] }}</div>
+            <div class="stat-number" style="font-size: 1.5rem; line-height: 1.2;">{{ stats.total_flights }}</div>
+            <!-- DEBUG: {{ stats | tojson }} -->
             <div class="stat-label" style="font-size: 0.8rem; opacity: 0.9;">
                 <i class="fas fa-plane-departure"></i> Flights
             </div>
         </div>
     </div>
     <div class="col-6">
-        <div class="card stat-card" style="background: linear-gradient(135deg, #0891B2 0%, #0E7490 100%); min-height: 70px; padding: 10px 0; border-radius: 6px;">
-            <div class="stat-number" style="font-size: 1.5rem; line-height: 1.2;">{{ "%.1f"|format(month_stats[1]) }}</div>
-            <div class="stat-label" style="font-size: 0.8rem; opacity: 0.9;">
-                <i class="fas fa-clock"></i> Hours
+        <div class="card stat-card d-flex flex-column justify-content-between" style="background: linear-gradient(135deg, #0891B2 0%, #0E7490 100%); min-height: 70px; padding: 10px 0; border-radius: 6px;">
+            <div class="stat-number" style="font-size: 1.3rem; line-height: 1.4; margin: 0;">
+                <div class="d-flex justify-content-around">
+                    <div class="text-center" style="width: 45%;">
+                        <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: -2px;">AT</div>
+                        <div>{{ "%.1f"|format(stats.total_airtime) }}h</div>
+                    </div>
+                    <div class="text-center" style="width: 45%;">
+                        <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: -2px;">FT</div>
+                        <div>{{ "%.1f"|format(stats.total_flight_time) }}h</div>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-label" style="font-size: 0.8rem; opacity: 0.9; margin-top: 4px;">
+                <i class="fas fa-clock"></i> Time
             </div>
         </div>
     </div>
 </div>
 
-<!-- Overtime Warning Only -->
-{% if month_stats[1] >= 25 %}
-<div class="alert alert-warning mb-3 py-2">
-    <i class="fas fa-exclamation-triangle frosty-icon"></i>
-    <strong>Approaching Overtime!</strong> 
-    You have {{ "%.1f"|format(month_stats[1]) }} hours this month. 
-    Overtime rate kicks in at 30 hours.
-</div>
-{% endif %}
 
 <!-- Recent Flights (No Financial Data) -->
 <div class="card">

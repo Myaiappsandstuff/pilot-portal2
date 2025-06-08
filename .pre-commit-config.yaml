@@ -1,0 +1,56 @@
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+    -   id: check-added-large-files  # Prevent giant files
+        args: ['--maxkb=500']
+    -   id: check-merge-conflict
+    -   id: check-yaml
+    -   id: end-of-file-fixer
+    -   id: trailing-whitespace
+    -   id: detect-private-key
+    -   id: detect-aws-credentials
+    -   id: detect-gcp-credentials
+
+-   repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.77.0
+    hooks:
+    -   id: terraform_fmt
+    -   id: terraform_validate
+
+-   repo: https://github.com/gruntwork-io/pre-commit
+    rev: v0.1.21
+    hooks:
+    -   id: shellcheck
+    -   id: tflint
+
+-   repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.33.0
+    hooks:
+    -   id: markdownlint
+
+-   repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v2.7.1
+    hooks:
+    -   id: prettier
+        additional_dependencies:
+        - prettier@2.7.1
+        - prettier-plugin-sh@0.12.8
+        - @prettier/plugin-xml@2.2.0
+
+-   repo: local
+    hooks:
+    -   id: secrets
+        name: Detect secrets
+        entry: detect-secrets-hook --baseline .secrets.baseline
+        language: python
+        additional_dependencies:
+        - detect-secrets==1.4.0
+        exclude: .*/tests/.*
+        pass_filenames: false
+        always_run: true
+
+ci:
+  autofix_commit_msg: "[pre-commit.ci] auto fixes from pre-commit.com hooks
+    
+    for more information, see https://pre-commit.ci"

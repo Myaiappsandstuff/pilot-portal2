@@ -22,10 +22,14 @@ wheels/
 
 # Environment variables
 .env
+.env.*
+!.env.example
 
 # Virtual Environment
+.venv/
 venv/
 env/
+ENV/
 
 # IDE
 .vscode/
@@ -38,8 +42,26 @@ env/
 /uploads/
 monthly_reports/
 
+# Certificates and keys
+certs/
+*.pem
+*.key
+*.crt
+*.cer
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
 # Docker
 .dockerignore
+Dockerfile
+.docker
 
 # Railway
 .railway/
@@ -47,3 +69,69 @@ monthly_reports/
 # OS
 .DS_Store
 Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Secrets
+secrets.*
+*.secret
+
+# Local development
+.local/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Project specific
+instance/
+.webassets-cache
+
+# IDE specific
+.ropeproject
+.project
+.pydevproject
+.settings/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Virtual environment
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/

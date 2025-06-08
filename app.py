@@ -6,7 +6,7 @@ import re
 from contextlib import contextmanager
 from typing import List, Optional, Tuple, Dict
 from datetime import datetime, timedelta
-from flask import Flask, render_template, request, redirect, url_for, flash, session, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_from_directory, make_response
 from flask_wtf import CSRFProtect
 from flask_talisman import Talisman
 from flask_limiter import Limiter
@@ -51,14 +51,15 @@ def check_security_config():
     logger.info("✅ Security configuration checks passed")
 
 # SECURE APP CONFIGURATION
+is_production = os.getenv('FLASK_ENV') == 'production'
 app.config.update(
     SECRET_KEY=os.getenv('SECRET_KEY'),
     MAX_CONTENT_LENGTH=16 * 1024 * 1024,
-    SESSION_COOKIE_SECURE=os.getenv('FLASK_ENV') == 'production',
+    SESSION_COOKIE_SECURE=is_production,  # Only True in production
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE='Lax',
+    SESSION_COOKIE_SAMESITE='Lax' if is_production else None,  # More permissive in development
     PERMANENT_SESSION_LIFETIME=timedelta(hours=2),
-    WTF_CSRF_ENABLED=True,
+    WTF_CSRF_ENABLED=is_production,  # Disable CSRF in development for easier testing
     WTF_CSRF_TIME_LIMIT=3600,
 )
 
@@ -71,18 +72,18 @@ limiter = Limiter(
 limiter.init_app(app)
 
 # Security headers
-force_https = os.getenv('FLASK_ENV') == 'production'
+is_production = os.getenv('FLASK_ENV') == 'production'
 talisman = Talisman(
     app,
-    force_https=force_https,
-    strict_transport_security=True,
+    force_https=is_production,  # Only force HTTPS in production
+    strict_transport_security=is_production,  # HSTS only in production
     content_security_policy={
         'default-src': "'self'",
-        'script-src': "'self' 'unsafe-inline' cdnjs.cloudflare.com cdn.jsdelivr.net",
-        'style-src': "'self' 'unsafe-inline' cdn.jsdelivr.net cdnjs.cloudflare.com",
-        'font-src': "'self' cdnjs.cloudflare.com",
-        'img-src': "'self' data:",
-    }
+        'script-src': ["'self'", "'unsafe-inline'"],  # Allow inline scripts in development
+        'style-src': ["'self'", "'unsafe-inline'"],  # Allow inline styles in development
+        'img-src': ["'self'", 'data:'],
+    } if is_production else None,  # Disable CSP in development
+    session_cookie_secure=is_production
 )
 
 # File upload configuration
@@ -477,11 +478,11 @@ class EmailSender:
                 logger.error(f"Photo file not found: {attachment_path}")
                 attachment_path = None
             
-            # Create subject line
-            subject = f"Frosty's Logsheet {entry[4]} Q{entry[5]} {entry[6]}"
+            # Create subject line with aircraft registration/tail number
+            subject = f"Logsheet {entry[4]} - {entry[14]} - {entry[6]}"
             
             # Create email body
-            body = f"""Frosty's Flight Operations - Logsheet Submission
+            body = f"""Flight Operations - Logsheet Submission
 
 Pilot: {entry[13]}
 Aircraft: {entry[14]}
@@ -499,7 +500,7 @@ Submitted: {entry[12]}
 {f"Logsheet photo ({photo_filename}) is attached." if attachment_path else "NOTE: Logsheet photo file was not found."}
 
 ---
-Frosty's Operations
+Flight Operations
 Professional Flight Services
 """
             
@@ -567,8 +568,8 @@ Professional Flight Services
                     send_to_email = work_email if work_email else personal_email
                     success = self._send_email_with_attachment(
                         to_email=send_to_email,
-                        subject=f"Frosty's Monthly Flight Report - {month_start.strftime('%B %Y')}",
-                        body=f"Dear {pilot_name},\n\nPlease find attached your monthly flight report for {month_start.strftime('%B %Y')}.\n\nBest regards,\nFrosty's Operations",
+                        subject=f"Monthly Flight Report - {pilot_name} - {month_start.strftime('%B %Y')}",
+                        body=f"Dear {pilot_name},\n\nPlease find attached your monthly flight report for {month_start.strftime('%B %Y')}.\n\nBest regards,\nOperations Team",
                         attachment_path=filepath
                     )
                     if success:
@@ -629,15 +630,27 @@ Professional Flight Services
 # Security middleware
 @app.before_request
 def security_headers():
-    # Skip checks for public routes
-    public_routes = ['pilot_login', 'pilot_auth', 'logout']
-    if request.endpoint in public_routes:
-        return
+    """Add security headers to all responses."""
+    # Skip for static files
+    if request.endpoint == 'static':
+        return None
+        
+    # Set security headers on the response
+    response = make_response()
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
     
-    # Simple session check
-    if 'pilot_id' not in session:
+    # Check for authentication on non-public routes
+    public_routes = ['pilot_login', 'static']
+    if request.endpoint not in public_routes and 'pilot_id' not in session:
         flash('Please log in to access this page.', 'warning')
         return redirect(url_for('pilot_login'))
+        
+    return None
 
 @app.after_request
 def add_security_headers(response):
@@ -651,43 +664,54 @@ def add_security_headers(response):
 # ==============================================================================
 
 @app.route('/')
+def index():
+    """Redirect root to login page."""
+    return redirect(url_for('pilot_login'))
+
+@app.route('/login', methods=['GET', 'POST'])
 def pilot_login():
+    """Handle login page display and authentication."""
+    if request.method == 'POST':
+        pin = request.form.get('pin', '').strip()
+        
+        if not validate_pilot_pin(pin):
+            flash('Please enter a valid 5-digit PIN', 'error')
+            logger.warning(f"Invalid PIN format attempted from {request.remote_addr}")
+            return render_template('pilot_login.html')
+        
+        conn = db_manager.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, name, is_admin FROM pilots WHERE pin = ?", (pin,))
+        pilot = cursor.fetchone()
+        conn.close()
+        
+        if pilot:
+            session.permanent = True
+            session['pilot_id'] = pilot[0]
+            session['pilot_name'] = sanitize_text_input(pilot[1])
+            session['is_admin'] = pilot[2]
+            
+            logger.info(f"Successful login: {pilot[1]} (ID: {pilot[0]})")
+            
+            if pilot[2]:
+                return redirect(url_for('admin_dashboard'))
+            else:
+                return redirect(url_for('pilot_dashboard'))
+        else:
+            flash('Invalid PIN', 'error')
+            logger.warning(f"Failed login attempt from {request.remote_addr}")
+    
+    # Handle GET request or failed login
     if request.args.get('force_logout'):
         session.clear()
+    
+    if 'pilot_id' in session:
+        if session.get('is_admin'):
+            return redirect(url_for('admin_dashboard'))
+        return redirect(url_for('pilot_dashboard'))
+        
     return render_template('pilot_login.html')
 
-@app.route('/pilot_auth', methods=['POST'])
-@limiter.limit("5 per minute")
-def pilot_auth():
-    pin = request.form.get('pin', '').strip()
-    
-    if not validate_pilot_pin(pin):
-        flash('Please enter a valid 5-digit PIN', 'error')
-        logger.warning(f"Invalid PIN format attempted from {request.remote_addr}")
-        return redirect(url_for('pilot_login'))
-    
-    conn = db_manager.get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, name, is_admin FROM pilots WHERE pin = ?", (pin,))
-    pilot = cursor.fetchone()
-    conn.close()
-    
-    if pilot:
-        session.permanent = True
-        session['pilot_id'] = pilot[0]
-        session['pilot_name'] = sanitize_text_input(pilot[1])
-        session['is_admin'] = pilot[2]
-        
-        logger.info(f"Successful login: {pilot[1]} (ID: {pilot[0]})")
-        
-        if pilot[2]:
-            return redirect(url_for('admin_dashboard'))
-        else:
-            return redirect(url_for('pilot_dashboard'))
-    else:
-        flash('Invalid PIN', 'error')
-        logger.warning(f"Failed login attempt from {request.remote_addr}")
-        return redirect(url_for('pilot_login'))
 
 @app.route('/pilot_dashboard')
 def pilot_dashboard():
@@ -702,13 +726,70 @@ def pilot_dashboard():
     now = datetime.now()
     month_start = now.replace(day=1).date()
     
+    # Get all flight entries for the current month for debugging
+    print(f"\nQuerying for flights since: {month_start}")
     cursor.execute('''
-        SELECT COUNT(*), COALESCE(SUM(airtime), 0), COALESCE(SUM(amount_earned), 0)
+        SELECT id, flight_date, airtime, flight_time
+        FROM flight_entries 
+        WHERE pilot_id = ? AND flight_date >= ?
+        ORDER BY flight_date
+    ''', (pilot_id, month_start))
+    
+    all_entries = cursor.fetchall()
+    print("\nDebug - All flight entries for the month:")
+    print("ID\tDate\t	AT\tFT")
+    print("-" * 50)
+    for entry in all_entries:
+        print(f"{entry[0]}\t{entry[1]}\t{entry[2]}\t{entry[3]}")
+    
+    # Get all stats in a single query to ensure consistency
+    print("\nRunning stats query with params:", {"pilot_id": pilot_id, "month_start": month_start})
+    cursor.execute('''
+        SELECT 
+            COUNT(*) as total_flights,
+            COALESCE(SUM(airtime), 0) as total_airtime,
+            COALESCE(SUM(flight_time), 0) as total_flight_time,
+            COALESCE(SUM(amount_earned), 0) as total_earned
         FROM flight_entries 
         WHERE pilot_id = ? AND flight_date >= ?
     ''', (pilot_id, month_start))
     
-    month_stats = cursor.fetchone()
+    result = cursor.fetchone()
+    print(f"\nRaw query result: {result}")
+    
+    total_flights = result[0]
+    total_airtime = float(result[1])  # Ensure float conversion
+    total_flight_time = float(result[2])  # Ensure float conversion
+    total_earned = result[3]
+    
+    print(f"After conversion - Airtime: {total_airtime}, Flight Time: {total_flight_time}")
+    
+    print("\nDebug - Calculated Totals:")
+    print(f"Total Flights: {total_flights}")
+    print(f"Total Airtime: {total_airtime}")
+    print(f"Total Flight Time: {total_flight_time}")
+    print(f"Total Earned: {total_earned}")
+    
+    # Create stats dictionary
+    stats = {
+        'total_flights': total_flights,
+        'total_airtime': total_airtime,
+        'total_flight_time': total_flight_time,
+        'total_earned': total_earned
+    }
+    
+    print("\nSending to template:")
+    print(f"Total Flights: {total_flights}")
+    print(f"Total Airtime: {total_airtime} (type: {type(total_airtime)})")
+    print(f"Total Flight Time: {total_flight_time} (type: {type(total_flight_time)})")
+    print(f"Total Earned: {total_earned}")
+    
+    # Debug output
+    print(f"\nDashboard Stats for {pilot_id} (since {month_start}):")
+    print(f"Total flights: {total_flights}")
+    print(f"Total airtime: {total_airtime}")
+    print(f"Total flight time: {total_flight_time}")
+    print(f"Total earned: {total_earned}")
     
     # Get recent flights
     cursor.execute('''
@@ -725,7 +806,7 @@ def pilot_dashboard():
     conn.close()
     
     return render_template('pilot_dashboard.html', 
-                         month_stats=month_stats,
+                         stats=stats,
                          recent_flights=recent_flights,
                          pilot_name=session['pilot_name'])
 
@@ -958,7 +1039,7 @@ def logsheet_confirm():
         'amount': amount
     }
     
-    return render_template('logsheet/confirm.html', data=confirmation_data)
+    return render_template('confirm.html', data=confirmation_data)
 
 @app.route('/logsheet/submit', methods=['POST'])
 def logsheet_submit():
@@ -1069,8 +1150,15 @@ def pilot_earnings():
     recent_paid_flights = cursor.fetchall()
     conn.close()
     
+    # Unpack month_stats into individual variables
+    total_flights = month_stats[0] if month_stats else 0
+    total_hours = month_stats[1] if month_stats else 0.0
+    total_earnings = month_stats[2] if month_stats else 0.0
+    
     return render_template('pilot_earnings.html', 
-                         month_stats=month_stats,
+                         total_flights=total_flights,
+                         total_hours=total_hours,
+                         total_earnings=total_earnings,
                          pilot_base_rate=pilot_base_rate,
                          recent_paid_flights=recent_paid_flights,
                          pilot_name=session['pilot_name'])
@@ -1087,13 +1175,18 @@ def pilot_flights():
     cursor.execute('''
         SELECT fe.flight_date, a.registration, fe.logsheet_number, fe.q_number,
                fe.flight_type, fe.airtime, fe.flight_time, fe.short_notice,
-               p2.name as other_pilot, fe.submitted_at
+               p2.name as other_pilot, fe.submitted_at,
+               CASE WHEN fe.pilot_id = ? THEN 'Primary' ELSE 'Secondary' END as pilot_role
         FROM flight_entries fe
         JOIN aircraft a ON fe.aircraft_id = a.id
-        LEFT JOIN pilots p2 ON fe.other_pilot_id = p2.id
-        WHERE fe.pilot_id = ?
+        LEFT JOIN pilots p2 ON 
+            CASE 
+                WHEN fe.pilot_id = ? THEN fe.other_pilot_id 
+                ELSE fe.pilot_id 
+            END = p2.id
+        WHERE fe.pilot_id = ? OR fe.other_pilot_id = ?
         ORDER BY fe.flight_date DESC
-    ''', (pilot_id,))
+    ''', (pilot_id, pilot_id, pilot_id, pilot_id))
     
     all_flights = cursor.fetchall()
     conn.close()
@@ -1127,6 +1220,10 @@ def admin_dashboard():
     cursor.execute("SELECT COUNT(*) FROM ops_emails WHERE is_active = TRUE")
     active_ops_emails = cursor.fetchone()[0]
     
+    # Get total earnings
+    cursor.execute("SELECT COALESCE(SUM(amount_earned), 0) FROM flight_entries")
+    total_earnings = cursor.fetchone()[0] or 0
+    
     # Get recent flights
     cursor.execute('''
         SELECT fe.flight_date, p.name, a.registration, fe.logsheet_number,
@@ -1139,6 +1236,11 @@ def admin_dashboard():
     ''')
     
     recent_flights = cursor.fetchall()
+    
+    # Get all pilots for the monthly summary dropdown
+    cursor.execute("SELECT id, name FROM pilots WHERE is_admin = FALSE ORDER BY name")
+    all_pilots = cursor.fetchall()
+    
     conn.close()
     
     return render_template('admin/dashboard.html',
@@ -1146,7 +1248,10 @@ def admin_dashboard():
                          total_flights=total_flights,
                          total_aircraft=total_aircraft,
                          active_ops_emails=active_ops_emails,
-                         recent_flights=recent_flights)
+                         recent_flights=recent_flights,
+                         all_pilots=all_pilots,
+                         total_earnings=total_earnings,
+                         current_month=datetime.now().strftime('%Y-%m'))
 
 @app.route('/admin/pilots')
 def admin_pilots():
@@ -1591,6 +1696,82 @@ def admin_delete_ops_email(email_id):
     conn.close()
     return redirect(url_for('admin_ops_emails'))
 
+@app.route('/pilot_monthly', methods=['GET'])
+def admin_pilot_monthly():
+    """Generate monthly report for a specific pilot."""
+    if 'pilot_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('pilot_login'))
+    
+    pilot_id = request.args.get('pilot_id')
+    month = request.args.get('month')
+    
+    if not pilot_id or not month:
+        flash('Please select a pilot and month', 'error')
+        return redirect(url_for('admin_dashboard'))
+    
+    try:
+        year, month = map(int, month.split('-'))
+    except (ValueError, AttributeError):
+        flash('Invalid date format', 'error')
+        return redirect(url_for('admin_dashboard'))
+    
+    conn = db_manager.get_connection()
+    cursor = conn.cursor()
+    
+    # Get pilot details
+    cursor.execute("SELECT name FROM pilots WHERE id = ?", (pilot_id,))
+    pilot = cursor.fetchone()
+    
+    if not pilot:
+        flash('Pilot not found', 'error')
+        return redirect(url_for('admin_dashboard'))
+    
+    # Get all pilots for the dropdown
+    cursor.execute("SELECT id, name FROM pilots WHERE is_admin = FALSE ORDER BY name")
+    all_pilots = cursor.fetchall()
+    
+    # Calculate date range
+    month_start = datetime(year, month, 1).date()
+    if month == 12:
+        month_end = datetime(year + 1, 1, 1).date() - timedelta(days=1)
+    else:
+        month_end = datetime(year, month + 1, 1).date() - timedelta(days=1)
+    
+    # Get flight entries for the selected month
+    cursor.execute('''
+        SELECT fe.flight_date, a.registration, fe.logsheet_number, fe.q_number,
+               fe.flight_type, fe.airtime, fe.amount_earned, fe.short_notice,
+               fe.rate_applied, p2.name as other_pilot
+        FROM flight_entries fe
+        JOIN aircraft a ON fe.aircraft_id = a.id
+        LEFT JOIN pilots p2 ON fe.other_pilot_id = p2.id
+        WHERE fe.pilot_id = ? AND fe.flight_date BETWEEN ? AND ?
+        ORDER BY fe.flight_date, a.registration
+    ''', (pilot_id, month_start, month_end))
+    
+    entries = cursor.fetchall()
+    
+    # Calculate totals
+    total_flights = len(entries)
+    total_hours = sum(entry[5] for entry in entries)
+    total_earnings = sum(entry[6] for entry in entries)
+    
+    conn.close()
+    
+    pilot_summary = {
+        'name': pilot[0],
+        'month': month_start.strftime('%B %Y'),
+        'flights': entries,
+        'total_flights': total_flights,
+        'total_hours': total_hours,
+        'total_earnings': total_earnings
+    }
+    
+    return render_template('admin/dashboard.html',
+                         pilot_summary=pilot_summary,
+                         all_pilots=all_pilots,
+                         current_month=month_start.strftime('%Y-%m'))
+
 @app.route('/admin/generate_reports')
 def admin_generate_reports():
     if 'pilot_id' not in session or not session.get('is_admin'):
@@ -1670,19 +1851,93 @@ def scheduled_monthly_reports():
 # ==============================================================================
 
 if __name__ == '__main__':
+    # Initialize scheduler
+    scheduler = BackgroundScheduler(daemon=True)
+    scheduler.add_job(scheduled_monthly_reports, 'cron', day=1, hour=2, minute=0)
+
+    def start_scheduler():
+        """Start the scheduler if it's not already running."""
+        if not scheduler.running:
+            try:
+                scheduler.start()
+                logger.info("Scheduler started successfully")
+            except Exception as e:
+                logger.error(f"Failed to start scheduler: {e}")
+
     # Check security configuration first
     check_security_config()
     
     # Initialize admin user on startup
     init_admin_user()
     
-    # Run the application
-    port = int(os.environ.get('PORT', 5000))
-    debug = os.environ.get('FLASK_ENV') == 'development'
+    # Start the scheduler if not already running
+    start_scheduler()
+    
+    # Configure and run the app
+    port = int(os.getenv('PORT', 5000))
+    debug_mode = os.getenv('FLASK_ENV') == 'development'
+    
+    # Force HTTP in development
+    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
     
     logger.info(f"🚀 Starting Frosty's Pilot Portal on port {port}")
     logger.info(f"🔒 Security features: CSRF, Rate Limiting, Secure Headers")
-    logger.info(f"📧 Email system: {'Configured' if os.getenv('GMAIL_USER') else 'NOT CONFIGURED'}")
+    logger.info(f"📧 Email system: {'Configured' if os.getenv('GMAIL_USER') and os.getenv('GMAIL_PASSWORD') else 'Not configured'}")
     logger.info(f"❄️  Frosty's Operations: Professional Flight Services")
     
-    app.run(host='0.0.0.0', port=port, debug=debug)
+    try:
+        # Configure SSL context
+        ssl_context = None
+        cert_path = os.path.join('certs', 'cert.pem')
+        key_path = os.path.join('certs', 'key.pem')
+        
+        if os.path.exists(cert_path) and os.path.exists(key_path):
+            ssl_context = (cert_path, key_path)
+            logger.info("Using existing SSL certificate")
+        else:
+            logger.warning("No SSL certificate found. Would you like to generate a self-signed certificate? (y/n)")
+            logger.warning("Note: For production, use a certificate from a trusted CA.")
+            
+            # Generate a self-signed certificate if not exists
+            from OpenSSL import crypto
+            
+            # Create a key pair
+            k = crypto.PKey()
+            k.generate_key(crypto.TYPE_RSA, 2048)
+            
+            # Create a self-signed cert
+            cert = crypto.X509()
+            cert.get_subject().C = "US"
+            cert.get_subject().ST = "State"
+            cert.get_subject().L = "City"
+            cert.get_subject().O = "Your Organization"
+            cert.get_subject().OU = "Your Organizational Unit"
+            cert.get_subject().CN = "localhost"
+            cert.set_serial_number(1000)
+            cert.gmtime_adj_notBefore(0)
+            cert.gmtime_adj_notAfter(365*24*60*60)  # Valid for 1 year
+            cert.set_issuer(cert.get_subject())
+            cert.set_pubkey(k)
+            cert.sign(k, 'sha256')
+            
+            # Save certificate
+            with open(cert_path, "wb") as f:
+                f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
+            with open(key_path, "wb") as f:
+                f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k))
+                
+            ssl_context = (cert_path, key_path)
+            logger.info(f"Generated self-signed certificate at {cert_path}")
+        
+        # Run the app with HTTPS
+        app.run(
+            host='0.0.0.0',
+            port=port,
+            debug=debug_mode,
+            ssl_context=ssl_context,
+            use_reloader=False
+        )
+    except KeyboardInterrupt:
+        logger.info("Shutting down...")
+        scheduler.shutdown()
+        raise
